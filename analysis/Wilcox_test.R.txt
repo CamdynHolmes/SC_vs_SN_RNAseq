@@ -1,0 +1,24 @@
+Wilcox_and_AUC <- function(vals_group1, vals_group2) {
+	test <- wilcox.test(vals_group1, vals_group2, alternative="two.sided")
+        # using Mann-Whitney U test
+
+        R = rank(c(vals_group1, vals_group2));
+        N1 = length(vals_group1)
+        N2 = length(vals_group2);
+        U1 = sum(R[1:N1])-N1*(N1+1)/2
+        U2 = sum(R[(N1+1):(N1+N2)])-N2*(N2+1)/2
+        if (N1 == 0) {return(c(1,1,1))}
+        if (N2 == 0) {return(c(1,1,1))}
+        AUC2 = 1-U2/(N1*N2); # smaller valued ranks (i.e. lower expression for group1).
+        AUC1 = 1-U1/(N1*N2); # large valued ranks (i.e. higher expression for group1).
+        # assumes large sample size
+        #  https://ncss-wpengine.netdna-ssl.com/wp-content/themes/ncss/pdf/Procedures/PASS/Confidence_Intervals_for_the_Area_Under_an_ROC_Curve.pdf
+        # originally (Hanley and McNeil 1982)
+	AUC <- max(AUC1, AUC2)
+        Q1 = AUC/(2-AUC)
+        Q2 = 2*AUC^2/(1+AUC)
+        SE = sqrt((AUC*(1-AUC)+ (N1-1)*(Q1-AUC^2)+(N2-1)*(Q2-AUC^2))/(N1*N2))
+	out = c(max(0, AUC-1.96*SE),AUC, min(1, AUC+1.96*SE), test$p.value)
+	names(out) = c("95% CI (low)", "AUC", "95% CI (high)", "p.value")
+        return(out);
+}
